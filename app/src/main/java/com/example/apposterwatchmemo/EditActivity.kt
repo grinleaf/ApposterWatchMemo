@@ -132,11 +132,15 @@ class EditActivity : AppCompatActivity() {
                     // 새로운 아이템 저장 분기 : DB에 아이템 저장
                     addNewItem(imgUri)
                     startActivity(Intent(this@EditActivity, MainActivity::class.java))
-                }else{
+                }else if(itemState == UPDATE_DATE){
                     // 기존 아이템 편집 분기 : DB 아이템 수정
-                    val updateItem = MainListModel(detailId, detailImgUrl, detailTitle, detailContent)
+                    val title = binding.tvTitleEdit.text.toString()
+                    val content = binding.tvContentEdit.text.toString()
+                    val updateItem = MainListModel(detailId, imgUri, title, content)
                     viewModel.updateItem(updateItem)
                     startActivity(Intent(this@EditActivity, MainActivity::class.java))
+                }else{
+                    Toast.makeText(this@EditActivity, "예외 발생 !", Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -149,9 +153,10 @@ class EditActivity : AppCompatActivity() {
     }
 
     fun initData(){
-        Glide.with(this@EditActivity).load(detailImgUrl).into(binding.ivEdit)
+        imgUri = detailImgUrl
+        Glide.with(this@EditActivity).load(imgUri).into(binding.ivEdit)
         binding.tvTitleEdit.setText(detailTitle)
-        binding.tvContentEdit.setText(detailTitle)
+        binding.tvContentEdit.setText(detailContent)
     }
 
     companion object {
