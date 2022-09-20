@@ -6,8 +6,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import kotlinx.coroutines.flow.Flow
 
-class WatchListViewModel: ViewModel() {
-
+class WatchListViewModel(): ViewModel() {
     val watchListRepository = WatchListRepository()
 
     fun getImage() : Flow<PagingData<Preview>> {

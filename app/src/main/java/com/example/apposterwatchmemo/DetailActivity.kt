@@ -3,6 +3,7 @@ package com.example.apposterwatchmemo
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.viewModels
@@ -61,7 +62,7 @@ class DetailActivity : AppCompatActivity() {
             R.id.delete_memo -> {
                 val deleteItem = MainListModel(id,imgUri,title,content)
                 viewModel.deleteItem(deleteItem)
-                startActivity(Intent(this@DetailActivity, MainActivity::class.java))
+                startActivity(Intent(this@DetailActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
             }
 
             // 백버튼 설정
@@ -73,8 +74,9 @@ class DetailActivity : AppCompatActivity() {
     }
 
     fun initData(){
-        Glide.with(this@DetailActivity).load(imgUri).into(binding.ivEdit)
-        binding.tvTitleEdit.text = title
-        binding.tvContentEdit.text = content
+        if(imgUri.isNotBlank()) Glide.with(this@DetailActivity).load(imgUri).into(binding.ivEdit)
+        if(title.isNotBlank()) binding.tvTitleEdit.text = title
+        if(content.isNotBlank()) binding.tvContentEdit.text = content
+        Log.i("aaa", imgUri)
     }
 }

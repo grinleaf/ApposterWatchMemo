@@ -15,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.ContentInfoCompat
 import androidx.core.widget.addTextChangedListener
 import com.bumptech.glide.Glide
 import com.example.apposterwatchmemo.databinding.ActivityEditBinding
@@ -25,7 +26,7 @@ class EditActivity : AppCompatActivity() {
 
     // DetailActivity 에서 편집버튼으로 진입 시
     val detailId by lazy { intent.getIntExtra("detail_id", 0) }
-    val detailImgUrl by lazy { intent.getStringExtra("detail_imgUri").toString() }
+    lateinit var detailImgUrl:String
     val detailTitle by lazy { intent.getStringExtra("detail_title").toString() }
     val detailContent by lazy { intent.getStringExtra("detail_content").toString() }
 
@@ -58,7 +59,6 @@ class EditActivity : AppCompatActivity() {
 
         // ADD or UPDATE 여부 확인 : 기본키가 default 값이면 데이터 없음
         itemState = if(detailId==0) ADD_DATE else UPDATE_DATE
-
         if(itemState== UPDATE_DATE) initData() else return
 
         // '내용' EditText 입력옵션 설정
@@ -131,14 +131,14 @@ class EditActivity : AppCompatActivity() {
                 if(itemState == ADD_DATE) {
                     // 새로운 아이템 저장 분기 : DB에 아이템 저장
                     addNewItem(imgUri)
-                    startActivity(Intent(this@EditActivity, MainActivity::class.java))
+                    startActivity(Intent(this@EditActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
                 }else if(itemState == UPDATE_DATE){
                     // 기존 아이템 편집 분기 : DB 아이템 수정
                     val title = binding.tvTitleEdit.text.toString()
                     val content = binding.tvContentEdit.text.toString()
                     val updateItem = MainListModel(detailId, imgUri, title, content)
                     viewModel.updateItem(updateItem)
-                    startActivity(Intent(this@EditActivity, MainActivity::class.java))
+                    startActivity(Intent(this@EditActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
                 }else{
                     Toast.makeText(this@EditActivity, "예외 발생 !", Toast.LENGTH_SHORT).show()
                 }
@@ -146,15 +146,15 @@ class EditActivity : AppCompatActivity() {
 
             // 백버튼 설정
             android.R.id.home -> {
-                 onBackPressed()
+                onBackPressed()
             }
         }
         return true
     }
 
     fun initData(){
-        imgUri = detailImgUrl
-        Glide.with(this@EditActivity).load(imgUri).into(binding.ivEdit)
+        detailImgUrl= intent.getStringExtra("detail_imgUri").toString()
+        Glide.with(this@EditActivity).load(detailImgUrl).into(binding.ivEdit)
         binding.tvTitleEdit.setText(detailTitle)
         binding.tvContentEdit.setText(detailContent)
     }
@@ -162,5 +162,10 @@ class EditActivity : AppCompatActivity() {
     companion object {
         const val ADD_DATE = 0
         const val UPDATE_DATE = 1
+    }
+
+    override fun onResume() {
+        super.onResume()
+        initData()
     }
 }

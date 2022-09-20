@@ -12,9 +12,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class WatchListRepository {
     val baseUrl = "http://mtm-api.apposter.com:7777"
-    val skip = 9
-    val limit = 8
-    val withoutFree = true
 
     val retrofit by lazy {
         Retrofit.Builder().baseUrl(baseUrl)
@@ -36,7 +33,7 @@ class WatchListRepository {
             config = PagingConfig(
                 pageSize = 30,
             ),
-            pagingSourceFactory = { WatchListPagingSource(retrofit, skip, limit, withoutFree) }
+            pagingSourceFactory = { WatchListPagingSource(retrofit) }
         ).flow
     }
 }

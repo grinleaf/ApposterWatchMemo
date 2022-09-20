@@ -44,7 +44,6 @@ class MainActivity : AppCompatActivity() {
     }
     fun getAllItem(){
         testlist = viewModel.selectAllItem()
-        Log.i("aaa","$testlist getallItem")
         adapter.submitList(testlist)
 
         if(testlist.isEmpty()){
@@ -59,7 +58,6 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         getAllItem()
-        Log.i("aaa","$testlist resume")
         adapter.submitList(testlist)
     }
 }
