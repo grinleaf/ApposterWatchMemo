@@ -111,6 +111,7 @@ class WatchListPagingAdapter(val requestManager: RequestManager): PagingDataAdap
         holder.iv.setOnClickListener {
             val intent = Intent(it.context, EditActivity::class.java)
             intent.putExtra("detail_imgUri", imgUrl)
+            intent.putExtra("by_watchlist", true)
             it.context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
         }
     }

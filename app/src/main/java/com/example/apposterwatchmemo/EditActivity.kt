@@ -22,7 +22,8 @@ import com.example.apposterwatchmemo.databinding.ActivityEditBinding
 
 class EditActivity : AppCompatActivity() {
     private val binding by lazy { ActivityEditBinding.inflate(layoutInflater) }
-    private var itemState = 0
+    private var itemState = false
+    private var isWatchList = false
 
     // DetailActivity 에서 편집버튼으로 진입 시
     val detailId by lazy { intent.getIntExtra("detail_id", 0) }
@@ -115,7 +116,7 @@ class EditActivity : AppCompatActivity() {
 
             // 2. 페이스 리스트에서 추가 : WatchListActivity 에서 데이터 선택 후 돌아오기
             R.id.add_face_list -> {
-                startActivity(Intent(this@EditActivity, WatchListActivity::class.java))
+                startActivity(Intent(this@EditActivity, WatchListActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
             }
 
             // 3. 저장하기 : MainActivity 로 전환 및 리스트 갱신
@@ -128,19 +129,23 @@ class EditActivity : AppCompatActivity() {
                     return false
                 }
 
-                if(itemState == ADD_DATE) {
-                    // 새로운 아이템 저장 분기 : DB에 아이템 저장
-                    addNewItem(imgUri)
-                    startActivity(Intent(this@EditActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
-                }else if(itemState == UPDATE_DATE){
-                    // 기존 아이템 편집 분기 : DB 아이템 수정
-                    val title = binding.tvTitleEdit.text.toString()
-                    val content = binding.tvContentEdit.text.toString()
-                    val updateItem = MainListModel(detailId, imgUri, title, content)
-                    viewModel.updateItem(updateItem)
-                    startActivity(Intent(this@EditActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
-                }else{
-                    Toast.makeText(this@EditActivity, "예외 발생 !", Toast.LENGTH_SHORT).show()
+                when (itemState) {
+                    ADD_DATE -> {
+                        // 새로운 아이템 저장 분기 : DB에 아이템 저장
+                        addNewItem(imgUri)
+                        startActivity(Intent(this@EditActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+                    }
+                    UPDATE_DATE -> {
+                        // 기존 아이템 편집 분기 : DB 아이템 수정
+                        val title = binding.tvTitleEdit.text.toString()
+                        val content = binding.tvContentEdit.text.toString()
+                        val updateItem = MainListModel(detailId, imgUri, title, content)
+                        viewModel.updateItem(updateItem)
+                        startActivity(Intent(this@EditActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+                    }
+                    else -> {
+                        Toast.makeText(this@EditActivity, "예외 발생 !", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
 
@@ -152,16 +157,25 @@ class EditActivity : AppCompatActivity() {
         return true
     }
 
-    fun initData(){
-        detailImgUrl= intent.getStringExtra("detail_imgUri").toString()
-        Glide.with(this@EditActivity).load(detailImgUrl).into(binding.ivEdit)
-        binding.tvTitleEdit.setText(detailTitle)
-        binding.tvContentEdit.setText(detailContent)
+    private fun initData(){
+        detailImgUrl = intent.getStringExtra("detail_imgUri").toString()
+        isWatchList = intent.getBooleanExtra("by_watchlist", BY_MAIN)
+        if(isWatchList == BY_WATCHLIST) {
+            Glide.with(this@EditActivity).load(detailImgUrl).into(binding.ivEdit)
+            return
+        }
+        else {
+            Glide.with(this@EditActivity).load(detailImgUrl).into(binding.ivEdit)
+            if (!binding.tvTitleEdit.text.isBlank()) binding.tvTitleEdit.setText(detailTitle)
+            if (!binding.tvContentEdit.text.isBlank()) binding.tvContentEdit.setText(detailContent)
+        }
     }
 
     companion object {
-        const val ADD_DATE = 0
-        const val UPDATE_DATE = 1
+        const val ADD_DATE = false
+        const val UPDATE_DATE = true
+        const val BY_MAIN = false
+        const val BY_WATCHLIST = true
     }
 
     override fun onResume() {
