@@ -24,6 +24,7 @@ class EditActivity : AppCompatActivity() {
     private val binding by lazy { ActivityEditBinding.inflate(layoutInflater) }
     private var itemState = false
     private var isWatchList = false
+    private var isGallery = false
 
     // DetailActivity 에서 편집버튼으로 진입 시
     val detailId by lazy { intent.getIntExtra("detail_id", 0) }
@@ -37,6 +38,7 @@ class EditActivity : AppCompatActivity() {
             if (result.resultCode == RESULT_OK) {
                 imgUri = result.data?.data!!.toString()
                 Glide.with(this@EditActivity).load(imgUri).into(binding.ivEdit)
+                isGallery = true
             }
         }
 
@@ -111,6 +113,7 @@ class EditActivity : AppCompatActivity() {
                     val intent = Intent(Intent.ACTION_PICK)
                     intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,"image/*")
                     requestGalleryLauncher.launch(intent)
+                    isGallery = true
                 }
             }
 
@@ -121,6 +124,7 @@ class EditActivity : AppCompatActivity() {
 
             // 3. 저장하기 : MainActivity 로 전환 및 리스트 갱신
             R.id.save_memo -> {
+
                 if(binding.tvTitleEdit.text.isBlank()){
                     Toast.makeText(this@EditActivity, "제목을 입력해주세요.", Toast.LENGTH_SHORT).show()
                     return false
@@ -132,7 +136,11 @@ class EditActivity : AppCompatActivity() {
                 when (itemState) {
                     ADD_DATE -> {
                         // 새로운 아이템 저장 분기 : DB에 아이템 저장
-                        addNewItem(imgUri)
+                        if(isWatchList) {
+                            imgUri = intent.getStringExtra("watchlist_imgUri").toString()
+                            addNewItem(imgUri)
+                        }
+                        else if(isGallery) addNewItem(imgUri)
                         startActivity(Intent(this@EditActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
                     }
                     UPDATE_DATE -> {
@@ -159,13 +167,20 @@ class EditActivity : AppCompatActivity() {
 
     private fun initData(){
         detailImgUrl = intent.getStringExtra("detail_imgUri").toString()
-        isWatchList = intent.getBooleanExtra("by_watchlist", BY_MAIN)
-        if(isWatchList == BY_WATCHLIST) {
-            Glide.with(this@EditActivity).load(detailImgUrl).into(binding.ivEdit)
+        isWatchList = intent.getBooleanExtra("by_watchlist", false)
+
+        if(isWatchList) {
+            imgUri = intent.getStringExtra("watchlist_imgUri").toString()
+            Glide.with(this@EditActivity).load(imgUri).into(binding.ivEdit)
             return
-        }
-        else {
-            Glide.with(this@EditActivity).load(detailImgUrl).into(binding.ivEdit)
+        }else if(isGallery){
+            imgUri = intent.getStringExtra("detail_imgUri").toString()
+            Glide.with(this@EditActivity).load(imgUri).into(binding.ivEdit)
+            binding.tvTitleEdit.setText(detailTitle)
+            binding.tvContentEdit.setText(detailContent)
+            return
+        }else{
+            binding.ivEdit.setImageResource(R.drawable.ic_launcher_foreground)
             if (!binding.tvTitleEdit.text.isBlank()) binding.tvTitleEdit.setText(detailTitle)
             if (!binding.tvContentEdit.text.isBlank()) binding.tvContentEdit.setText(detailContent)
         }
@@ -174,12 +189,5 @@ class EditActivity : AppCompatActivity() {
     companion object {
         const val ADD_DATE = false
         const val UPDATE_DATE = true
-        const val BY_MAIN = false
-        const val BY_WATCHLIST = true
-    }
-
-    override fun onResume() {
-        super.onResume()
-        initData()
     }
 }

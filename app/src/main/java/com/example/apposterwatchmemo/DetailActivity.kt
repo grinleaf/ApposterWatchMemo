@@ -77,6 +77,5 @@ class DetailActivity : AppCompatActivity() {
         if(imgUri.isNotBlank()) Glide.with(this@DetailActivity).load(imgUri).into(binding.ivEdit)
         if(title.isNotBlank()) binding.tvTitleEdit.text = title
         if(content.isNotBlank()) binding.tvContentEdit.text = content
-        Log.i("aaa", imgUri)
     }
 }

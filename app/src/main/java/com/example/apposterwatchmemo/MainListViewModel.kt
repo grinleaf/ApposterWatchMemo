@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
 class MainListViewModel(private val mainListDao: MainListDao):ViewModel() {
+//    val mainList = MutableLiveData<List<MainListModel>>()
 
     private fun insertItem(mainListModel: MainListModel){
         viewModelScope.launch {
@@ -40,7 +41,7 @@ class MainListViewModel(private val mainListDao: MainListDao):ViewModel() {
         }
     }
 
-    fun selectAllItem() : List<MainListModel>{
+    fun selectAllItem():List<MainListModel>{
         return mainListDao.getAll()
     }
 
