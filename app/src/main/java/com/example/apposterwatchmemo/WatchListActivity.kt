@@ -3,13 +3,11 @@ package com.example.apposterwatchmemo
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.PagingDataAdapter
@@ -41,7 +39,12 @@ class WatchListActivity : AppCompatActivity() {
             setDisplayHomeAsUpEnabled(true)
         }
 
-        adapter = WatchListPagingAdapter(Glide.with(this@WatchListActivity))
+        adapter = WatchListPagingAdapter(Glide.with(this@WatchListActivity)) { imgUrl ->
+            val intent = Intent(this, EditActivity::class.java)
+            intent.putExtra("watchlist_imgUri", imgUrl)
+            setResult(RESULT_OK, intent)
+            finish()
+        }
         binding.recycler.adapter = adapter
 
         lifecycleScope.launch{
@@ -100,7 +103,8 @@ class WatchListPagingSource(
 }
 
 // paging adapter
-class WatchListPagingAdapter(val requestManager: RequestManager): PagingDataAdapter<Preview, WatchListPagingAdapter.VH>(diffUtil){
+class WatchListPagingAdapter(val requestManager: RequestManager, val onClick: (String) -> Unit)
+    : PagingDataAdapter<Preview, WatchListPagingAdapter.VH>(diffUtil){
     open class VH(view: View):RecyclerView.ViewHolder(view){
         val iv:ImageView by lazy { view.findViewById(R.id.iv_watchlist) }
     }
@@ -109,10 +113,7 @@ class WatchListPagingAdapter(val requestManager: RequestManager): PagingDataAdap
         val imgUrl = WatchListRepository().baseUrl + getItem(position)?.preview
         requestManager.load(imgUrl).into(holder.iv)
         holder.iv.setOnClickListener {
-            val intent = Intent(it.context, EditActivity::class.java)
-            intent.putExtra("watchlist_imgUri", imgUrl)
-            intent.putExtra("by_watchlist", true)
-            it.context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+            onClick.invoke(imgUrl)
         }
     }
 

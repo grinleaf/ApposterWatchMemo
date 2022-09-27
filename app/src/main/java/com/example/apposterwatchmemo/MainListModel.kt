@@ -1,6 +1,7 @@
 package com.example.apposterwatchmemo
 
 import android.content.Context
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.room.*
 import androidx.room.OnConflictStrategy.REPLACE
@@ -28,6 +29,9 @@ interface MainListDao{
 
     @Delete
     suspend fun delete(mainListModel: MainListModel)
+
+    @Query("DELETE FROM mainlist")
+    suspend fun deleteAll()
 }
 
 @Database(entities = [MainListModel::class], version = 1, exportSchema = false)

@@ -3,7 +3,6 @@ package com.example.apposterwatchmemo
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.viewModels
@@ -21,7 +20,7 @@ class DetailActivity : AppCompatActivity() {
     // Room 라이브러리 적용 : MainListViewModel
     private val viewModel: MainListViewModel by viewModels {
         MainListViewModelFactory(
-            (application as WatchMemoApplication).database.mainListDao()
+            (application as WatchMemoApplication).repository
         )
     }
 
@@ -62,7 +61,7 @@ class DetailActivity : AppCompatActivity() {
             R.id.delete_memo -> {
                 val deleteItem = MainListModel(id,imgUri,title,content)
                 viewModel.deleteItem(deleteItem)
-                startActivity(Intent(this@DetailActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                startActivity(Intent(this@DetailActivity, MainActivity::class.java))
             }
 
             // 백버튼 설정

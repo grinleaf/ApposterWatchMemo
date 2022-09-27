@@ -3,16 +3,13 @@ package com.example.apposterwatchmemo
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.viewModels
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.get
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -22,14 +19,12 @@ import com.example.apposterwatchmemo.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
-    private var testlist = listOf<MainListModel>()
     private val adapter by lazy { MainListAdapter(Glide.with(this)) }
 
-
-    // Room 라이브러리 적용 : MainListViewModel
+    // 뷰모델 초기화의 다른 방법. 해당 viewModel 이 초기화되는 Activity 혹은 Fragment 의 생명주기에 종속됨
     private val viewModel: MainListViewModel by viewModels {
         MainListViewModelFactory(
-            (application as WatchMemoApplication).database.mainListDao()
+            (application as WatchMemoApplication).repository
         )
     }
 
@@ -45,24 +40,21 @@ class MainActivity : AppCompatActivity() {
 
         // 플로팅버튼 클릭 시 편집화면으로 전환
         binding.fab.setOnClickListener { startActivity(Intent(this@MainActivity, EditActivity::class.java)) }
-    }
-    fun getAllItem(){
-        testlist = viewModel.selectAllItem()
-        adapter.submitList(testlist)
 
-        if(testlist.isEmpty()){
+        viewModel.mainListLiveData.observe(this@MainActivity, Observer{
+            adapter.submitList(it)
+            getAllItem()
+        })
+    }
+
+    fun getAllItem(){
+        if(adapter.itemCount == 0){
             binding.noItemMain.visibility = View.VISIBLE
             binding.recycler.visibility = View.GONE
         } else {
             binding.noItemMain.visibility = View.GONE
             binding.recycler.visibility = View.VISIBLE
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        getAllItem()
-        adapter.submitList(testlist)
     }
 }
 

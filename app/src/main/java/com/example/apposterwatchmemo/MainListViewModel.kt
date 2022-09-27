@@ -1,17 +1,21 @@
 package com.example.apposterwatchmemo
 
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import kotlinx.coroutines.launch
 
-class MainListViewModel(private val mainListDao: MainListDao):ViewModel() {
-//    val mainList = MutableLiveData<List<MainListModel>>()
+class MainListViewModel(private val a_repository: MainListRepository):ViewModel() {
+    private val repository = MainListRepository(
+        WatchMemoApplication().database.mainListDao()
+    )
+    val mainListLiveData = MutableLiveData<List<MainListModel>>()
+
+    init {
+        mainListLiveData.value = repository.getAll()
+    }
 
     private fun insertItem(mainListModel: MainListModel){
         viewModelScope.launch {
-            mainListDao.insert(mainListModel)
+            repository.insert(mainListModel)
         }
     }
 
@@ -37,26 +41,22 @@ class MainListViewModel(private val mainListDao: MainListDao):ViewModel() {
 
     fun deleteItem(mainListModel: MainListModel){
         viewModelScope.launch {
-            mainListDao.delete(mainListModel)
+            repository.delete(mainListModel)
         }
     }
 
-    fun selectAllItem():List<MainListModel>{
-        return mainListDao.getAll()
-    }
-
     fun updateItem(mainListModel: MainListModel){
-        viewModelScope.launch {
-            mainListDao.update(mainListModel)
+        viewModelScope.launch{
+            repository.update(mainListModel)
         }
     }
 }
 
-class MainListViewModelFactory(private val mainListDao: MainListDao) : ViewModelProvider.Factory{
+class MainListViewModelFactory(private val repository: MainListRepository) : ViewModelProvider.Factory{
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if(modelClass.isAssignableFrom(MainListViewModel::class.java)){
             @Suppress("UNCHECKED_CAST")
-            return MainListViewModel(mainListDao) as T
+            return MainListViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

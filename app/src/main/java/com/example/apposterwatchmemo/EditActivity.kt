@@ -2,9 +2,7 @@ package com.example.apposterwatchmemo
 
 import android.Manifest
 import android.content.Intent
-import android.content.LocusId
 import android.content.pm.PackageManager
-import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
@@ -15,16 +13,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.ContentInfoCompat
 import androidx.core.widget.addTextChangedListener
 import com.bumptech.glide.Glide
 import com.example.apposterwatchmemo.databinding.ActivityEditBinding
 
 class EditActivity : AppCompatActivity() {
     private val binding by lazy { ActivityEditBinding.inflate(layoutInflater) }
-    private var itemState = false
-    private var isWatchList = false
-    private var isGallery = false
+    private var itemState = false       // 새 아이템 추가(false) or 기존 아이템 편집(true)
 
     // DetailActivity 에서 편집버튼으로 진입 시
     val detailId by lazy { intent.getIntExtra("detail_id", 0) }
@@ -33,19 +28,29 @@ class EditActivity : AppCompatActivity() {
     val detailContent by lazy { intent.getStringExtra("detail_content").toString() }
 
     lateinit var imgUri: String
-    private val requestGalleryLauncher =
+
+    // 갤러리앱 런처
+    private val galleryLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
                 imgUri = result.data?.data!!.toString()
                 Glide.with(this@EditActivity).load(imgUri).into(binding.ivEdit)
-                isGallery = true
+            }
+        }
+
+    // 워치리스트 런처
+    private val watchListLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()){
+            if(it.resultCode== RESULT_OK){
+                imgUri = it.data?.getStringExtra("watchlist_imgUri") ?: ""
+                Glide.with(this@EditActivity).load(imgUri).into(binding.ivEdit)
             }
         }
 
     // Room 라이브러리 적용 : MainListViewModel
     private val viewModel: MainListViewModel by viewModels {
         MainListViewModelFactory(
-            (application as WatchMemoApplication).database.mainListDao()
+            (application as WatchMemoApplication).repository
         )
     }
 
@@ -112,19 +117,18 @@ class EditActivity : AppCompatActivity() {
                     // 권한이 이미 있을 경우, 갤러리 앱 실행
                     val intent = Intent(Intent.ACTION_PICK)
                     intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,"image/*")
-                    requestGalleryLauncher.launch(intent)
-                    isGallery = true
+                    galleryLauncher.launch(intent)
                 }
             }
 
             // 2. 페이스 리스트에서 추가 : WatchListActivity 에서 데이터 선택 후 돌아오기
             R.id.add_face_list -> {
-                startActivity(Intent(this@EditActivity, WatchListActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+                val intent = Intent(this@EditActivity, WatchListActivity::class.java)
+                watchListLauncher.launch(intent)
             }
 
             // 3. 저장하기 : MainActivity 로 전환 및 리스트 갱신
             R.id.save_memo -> {
-
                 if(binding.tvTitleEdit.text.isBlank()){
                     Toast.makeText(this@EditActivity, "제목을 입력해주세요.", Toast.LENGTH_SHORT).show()
                     return false
@@ -134,22 +138,17 @@ class EditActivity : AppCompatActivity() {
                 }
 
                 when (itemState) {
-                    ADD_DATE -> {
+                    ADD_DATE -> {   //false
                         // 새로운 아이템 저장 분기 : DB에 아이템 저장
-                        if(isWatchList) {
-                            imgUri = intent.getStringExtra("watchlist_imgUri").toString()
-                            addNewItem(imgUri)
-                        }
-                        else if(isGallery) addNewItem(imgUri)
-                        startActivity(Intent(this@EditActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+                        addNewItem(imgUri)
+                        startActivity(Intent(this@EditActivity, MainActivity::class.java))
                     }
-                    UPDATE_DATE -> {
+                    UPDATE_DATE -> {    //true
                         // 기존 아이템 편집 분기 : DB 아이템 수정
                         val title = binding.tvTitleEdit.text.toString()
                         val content = binding.tvContentEdit.text.toString()
-                        val updateItem = MainListModel(detailId, imgUri, title, content)
-                        viewModel.updateItem(updateItem)
-                        startActivity(Intent(this@EditActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+                        updateItem(detailId,imgUri,title,content)
+                        startActivity(Intent(this@EditActivity, MainActivity::class.java))
                     }
                     else -> {
                         Toast.makeText(this@EditActivity, "예외 발생 !", Toast.LENGTH_SHORT).show()
@@ -167,15 +166,9 @@ class EditActivity : AppCompatActivity() {
 
     private fun initData(){
         detailImgUrl = intent.getStringExtra("detail_imgUri").toString()
-        isWatchList = intent.getBooleanExtra("by_watchlist", false)
 
-        if(isWatchList) {
-            imgUri = intent.getStringExtra("watchlist_imgUri").toString()
-            Glide.with(this@EditActivity).load(imgUri).into(binding.ivEdit)
-            return
-        }else if(isGallery){
-            imgUri = intent.getStringExtra("detail_imgUri").toString()
-            Glide.with(this@EditActivity).load(imgUri).into(binding.ivEdit)
+        if(itemState){
+            Glide.with(this@EditActivity).load(detailImgUrl).into(binding.ivEdit)
             binding.tvTitleEdit.setText(detailTitle)
             binding.tvContentEdit.setText(detailContent)
             return
