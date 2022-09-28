@@ -1,17 +1,14 @@
 package com.example.apposterwatchmemo
 
+import android.app.Application
 import androidx.lifecycle.*
 import kotlinx.coroutines.launch
 
-class MainListViewModel(private val a_repository: MainListRepository):ViewModel() {
+class MainListViewModel(application: Application) :AndroidViewModel(application) {
     private val repository = MainListRepository(
-        WatchMemoApplication().database.mainListDao()
+        getApplication<WatchMemoApplication>().database.mainListDao()
     )
-    val mainListLiveData = MutableLiveData<List<MainListModel>>()
-
-    init {
-        mainListLiveData.value = repository.getAll()
-    }
+    val mainListLiveData : LiveData<List<MainListModel>> = repository.getAll()
 
     private fun insertItem(mainListModel: MainListModel){
         viewModelScope.launch {
@@ -52,12 +49,12 @@ class MainListViewModel(private val a_repository: MainListRepository):ViewModel(
     }
 }
 
-class MainListViewModelFactory(private val repository: MainListRepository) : ViewModelProvider.Factory{
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if(modelClass.isAssignableFrom(MainListViewModel::class.java)){
-            @Suppress("UNCHECKED_CAST")
-            return MainListViewModel(repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
+//class MainListViewModelFactory(private val repository: MainListRepository) : ViewModelProvider.Factory{
+//    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+//        if(modelClass.isAssignableFrom(MainListViewModel::class.java)){
+//            @Suppress("UNCHECKED_CAST")
+//            return MainListViewModel(repository) as T
+//        }
+//        throw IllegalArgumentException("Unknown ViewModel class")
+//    }
+//}

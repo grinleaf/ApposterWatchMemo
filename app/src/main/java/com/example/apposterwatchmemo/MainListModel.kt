@@ -19,7 +19,7 @@ data class MainListModel(
 @Dao
 interface MainListDao{
     @Query("SELECT * FROM mainlist")
-    fun getAll() : List<MainListModel>
+    fun getAll() : LiveData<List<MainListModel>>
 
     @Insert(onConflict = REPLACE)
     suspend fun insert(mainListModel: MainListModel)
@@ -45,7 +45,7 @@ abstract class MainDatabase : RoomDatabase(){
         fun getDatabase(context: Context) : MainDatabase {
             return INSTANCE ?: synchronized(this){
                 val instance = Room.databaseBuilder(
-                    context.applicationContext,
+                    context,
                     MainDatabase::class.java,
                     "mainlist.db"
                 )

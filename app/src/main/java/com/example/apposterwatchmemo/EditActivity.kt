@@ -14,12 +14,14 @@ import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
+import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.example.apposterwatchmemo.databinding.ActivityEditBinding
 
 class EditActivity : AppCompatActivity() {
     private val binding by lazy { ActivityEditBinding.inflate(layoutInflater) }
-    private var itemState = false       // 새 아이템 추가(false) or 기존 아이템 편집(true)
+    private var itemState = false           // 새 아이템 추가(false) or 기존 아이템 편집(true)
+    private var isImageChanged = false      // 기존 사진이 변경되었는지 여부
 
     // DetailActivity 에서 편집버튼으로 진입 시
     val detailId by lazy { intent.getIntExtra("detail_id", 0) }
@@ -35,6 +37,7 @@ class EditActivity : AppCompatActivity() {
             if (result.resultCode == RESULT_OK) {
                 imgUri = result.data?.data!!.toString()
                 Glide.with(this@EditActivity).load(imgUri).into(binding.ivEdit)
+                isImageChanged = true
             }
         }
 
@@ -44,15 +47,12 @@ class EditActivity : AppCompatActivity() {
             if(it.resultCode== RESULT_OK){
                 imgUri = it.data?.getStringExtra("watchlist_imgUri") ?: ""
                 Glide.with(this@EditActivity).load(imgUri).into(binding.ivEdit)
+                isImageChanged = true
             }
         }
 
     // Room 라이브러리 적용 : MainListViewModel
-    private val viewModel: MainListViewModel by viewModels {
-        MainListViewModelFactory(
-            (application as WatchMemoApplication).repository
-        )
-    }
+    private val viewModel by lazy { ViewModelProvider(this@EditActivity, ViewModelProvider.AndroidViewModelFactory(application))[MainListViewModel::class.java] }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,7 +72,7 @@ class EditActivity : AppCompatActivity() {
         // '내용' EditText 입력옵션 설정
         binding.tvContentEdit.run {
             addTextChangedListener {
-                if(lineCount>6) setLines(lineCount) else setLines(6)
+                if(lineCount>6) this.setLines(lineCount) else this.setLines(6)
             }
         }
     }
@@ -109,7 +109,7 @@ class EditActivity : AppCompatActivity() {
         when (item.itemId) {
             // 1. 내 폰에서 추가 : 디바이스 갤러리 앱에서 데이터 선택 후 돌아오기
             R.id.add_my_image -> {
-                // 갤러리 앱 접근 권한 요청
+                // 갤러리 앱 접근 권한(외부저장소 read/write) 요청
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED ||
                     ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED){
                     ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE),1)
@@ -141,14 +141,15 @@ class EditActivity : AppCompatActivity() {
                     ADD_DATE -> {   //false
                         // 새로운 아이템 저장 분기 : DB에 아이템 저장
                         addNewItem(imgUri)
-                        startActivity(Intent(this@EditActivity, MainActivity::class.java))
+                        finish()
                     }
                     UPDATE_DATE -> {    //true
                         // 기존 아이템 편집 분기 : DB 아이템 수정
                         val title = binding.tvTitleEdit.text.toString()
                         val content = binding.tvContentEdit.text.toString()
-                        updateItem(detailId,imgUri,title,content)
-                        startActivity(Intent(this@EditActivity, MainActivity::class.java))
+                        if(!isImageChanged) updateItem(detailId,detailImgUrl,title,content)
+                        else updateItem(detailId,imgUri,title,content)
+                        finish()
                     }
                     else -> {
                         Toast.makeText(this@EditActivity, "예외 발생 !", Toast.LENGTH_SHORT).show()

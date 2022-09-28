@@ -1,9 +1,12 @@
 package com.example.apposterwatchmemo
 
-class MainListRepository(private val mainListDao: MainListDao) {
-    private val mainList : List<MainListModel> = mainListDao.getAll()
+import androidx.lifecycle.LiveData
 
-    fun getAll() : List<MainListModel>{
+class MainListRepository(private val mainListDao: MainListDao) {
+    private lateinit var mainList : LiveData<List<MainListModel>>
+
+    fun getAll() : LiveData<List<MainListModel>>{
+        mainList = mainListDao.getAll()
         return mainList
     }
 

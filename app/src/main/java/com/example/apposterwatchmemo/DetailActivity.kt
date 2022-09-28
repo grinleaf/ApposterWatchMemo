@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.viewModels
+import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.example.apposterwatchmemo.databinding.ActivityDetailBinding
 
@@ -18,11 +19,7 @@ class DetailActivity : AppCompatActivity() {
     val content by lazy { intent.getStringExtra("main_content").toString() }
 
     // Room 라이브러리 적용 : MainListViewModel
-    private val viewModel: MainListViewModel by viewModels {
-        MainListViewModelFactory(
-            (application as WatchMemoApplication).repository
-        )
-    }
+    private val viewModel by lazy { ViewModelProvider(this@DetailActivity, ViewModelProvider.AndroidViewModelFactory(application))[MainListViewModel::class.java] }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,13 +52,14 @@ class DetailActivity : AppCompatActivity() {
                 intent.putExtra("detail_title", title)
                 intent.putExtra("detail_content", content)
                 startActivity(intent)
+                finish()
             }
 
             // 삭제 : 해당 리스트 데이터를 MainActivity 의 리스트에서 제거 + MainActivity 리스트 갱신
             R.id.delete_memo -> {
                 val deleteItem = MainListModel(id,imgUri,title,content)
                 viewModel.deleteItem(deleteItem)
-                startActivity(Intent(this@DetailActivity, MainActivity::class.java))
+                finish()
             }
 
             // 백버튼 설정
